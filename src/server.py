@@ -53,8 +53,7 @@ def hasblocks(hashlist):
 def getfileinfomap():
     """
     Gets the fileinfo map
-    example:
-    fileInfoMap['xxx.jpg'] = [2 ['e52a', '928f', '11c3']]
+    key : value = 'xxx.jpg' : [2 ['e52a', '928f', '11c3']]
     """
     print("GetFileInfoMap()")
     return fileInfoMap
