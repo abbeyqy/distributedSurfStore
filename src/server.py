@@ -1,12 +1,20 @@
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 from socketserver import ThreadingMixIn
+import hashlib
+
 
 class RequestHandler(SimpleXMLRPCRequestHandler):
-    rpc_paths = ('/RPC2',)
+    rpc_paths = ('/RPC2', )
+
 
 class threadedXMLRPCServer(ThreadingMixIn, SimpleXMLRPCServer):
     pass
+
+
+hashBlockMap = {}
+fileInfoMap = {}
+
 
 # A simple ping, returns true
 def ping():
@@ -14,58 +22,70 @@ def ping():
     print("Ping()")
     return True
 
+
 # Gets a block, given a specific hash value
 def getblock(h):
     """Gets a block"""
     print("GetBlock(" + h + ")")
-
-    blockData = bytes(4)
+    blockData = hashBlockMap[h]
+    # blockData = bytes(4)
     return blockData
+
 
 # Puts a block
 def putblock(b):
     """Puts a block"""
-    print("PutBlock()")
-
+    hash_value = hashlib.sha256(b).hexdigest()
+    hashBlockMap[hash_value] = b
+    print("PutBlock()", hash_value)
     return True
 
-# Given a list of blocks, return the subset that are on this server
-def hasblocks(blocklist):
-    """Determines which blocks are on this server"""
-    print("HasBlocks()")
 
-    return blocklist
+# Given a list of hashes, return the subset that are on this server
+def hasblocks(hashlist):
+    """Determines which blocks are on this server"""
+    hashlistout = [h for h in hashlist if h in hashBlockMap]
+    print("HasBlocks()")
+    return hashlistout
+
 
 # Retrieves the server's FileInfoMap
 def getfileinfomap():
-    """Gets the fileinfo map"""
+    """
+    Gets the fileinfo map
+    example:
+    fileInfoMap['xxx.jpg'] = [2 ['e52a', '928f', '11c3']]
+    """
     print("GetFileInfoMap()")
+    return fileInfoMap
 
-    result = {}
-
-    # file1.dat
-    file1info = []
-    file1info.append(3) // version
-
-    file1blocks = []
-    file1blocks.append("h1")
-    file1blocks.append("h2")
-    file1blocks.append("h3")
-
-    file1info.append(file1blocks)
-    
-    result["file1.dat"] = file1info
-
-    return result
 
 # Update a file's fileinfo entry
-def updatefile(filename, version, blocklist):
+def updatefile(filename, version, hashlist):
     """Updates a file's fileinfo entry"""
     print("UpdateFile()")
+    # if the file never existed, create it.
+    if filename not in fileInfoMap:
+        fileInfoMap[filename] = [version, hashlist]
+        return
+    # if the file was previously deleted, update the version number
+    # that is one larger than the "tombstone" record.
+    if fileInfoMap[filename][1] == '0':
+        fileInfoMap[filename][0] += 1
+        fileInfoMap[filename][1] = hashlist
+        return
+    # if the file is in the file info map, update it.
+    currVersion = fileInfoMap[filename][0]
+    if version != currVersion + 1:
+        print("Version not right!")
+        return
+    fileInfoMap[filename][1] = hashlist
+    print("File updated.")
+    return
 
-    return True
 
 # PROJECT 3 APIs below
+
 
 # Queries whether this metadata store is a leader
 # Note that this call should work even when the server is "crashed"
@@ -73,6 +93,7 @@ def isLeader():
     """Is this metadata store a leader?"""
     print("IsLeader()")
     return True
+
 
 # "Crashes" this metadata store
 # Until Restore() is called, the server should reply to all RPCs
@@ -82,6 +103,7 @@ def crash():
     """Crashes this metadata store"""
     print("Crash()")
     return True
+
 
 # "Restores" this metadata store, allowing it to start responding
 # to and sending RPCs to other nodes
@@ -98,22 +120,24 @@ def isCrashed():
     print("IsCrashed()")
     return True
 
+
 if __name__ == "__main__":
     try:
         print("Attempting to start XML-RPC Server...")
-        server = threadedXMLRPCServer(('localhost', 8080), requestHandler=RequestHandler)
+        server = threadedXMLRPCServer(('localhost', 8080),
+                                      requestHandler=RequestHandler)
         server.register_introspection_functions()
-        server.register_function(ping,"surfstore.ping")
-        server.register_function(getblock,"surfstore.getblock")
-        server.register_function(putblock,"surfstore.putblock")
-        server.register_function(hasblocks,"surfstore.hasblocks")
-        server.register_function(getfileinfomap,"surfstore.getfileinfomap")
-        server.register_function(updatefile,"surfstore.updatefile")
+        server.register_function(ping, "surfstore.ping")
+        server.register_function(getblock, "surfstore.getblock")
+        server.register_function(putblock, "surfstore.putblock")
+        server.register_function(hasblocks, "surfstore.hasblocks")
+        server.register_function(getfileinfomap, "surfstore.getfileinfomap")
+        server.register_function(updatefile, "surfstore.updatefile")
 
-        server.register_function(isLeader,"surfstore.isleader")
-        server.register_function(crash,"surfstore.crash")
-        server.register_function(restore,"surfstore.restore")
-        server.register_function(isCrashed,"surfstore.iscrashed")
+        server.register_function(isLeader, "surfstore.isleader")
+        server.register_function(crash, "surfstore.crash")
+        server.register_function(restore, "surfstore.restore")
+        server.register_function(isCrashed, "surfstore.iscrashed")
         print("Started successfully.")
         print("Accepting requests. (Halt program to stop.)")
         server.serve_forever()
