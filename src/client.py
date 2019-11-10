@@ -18,7 +18,7 @@ if __name__ == "__main__":
         print("Ping() successful")
 
         ##### sync file #####
-        localFile = {}
+        # { filenam : [h1, h2, h3...]}
         localNewFile = {}
         localUpdatedFile = {}
 
@@ -37,7 +37,6 @@ if __name__ == "__main__":
 
         # client scan base directory
         for filename in os.listdir(args.basedir):
-            print(filename)
             if filename == "index.txt":
                 continue
             hashlist = []
@@ -52,8 +51,24 @@ if __name__ == "__main__":
                 localNewFile[filename] = hashlist
             elif localFileInfo[filename][1] != hashlist:
                 localUpdatedFile[filename] = hashlist
+
         # download remote index file
         remoteFileInfo = client.surfstore.getfileinfomap()
+
+        # update new file
+        for filename in localNewFile:
+            with open(args.basedir + filename, "rb") as bytefile:
+                while True:
+                    piece = bytefile.read(args.blocksize)
+                    if piece == b'':
+                        break
+                    client.surfstore.putblock(piece)
+            client.surfstore.updatefile(filename, 1, localNewFile[filename])
+
+        # # download remote index file
+        # remoteFileInfo = client.surfstore.getfileinfomap()
+        # print(remoteFileInfo)
+
 
     except Exception as e:
         print("Client: " + str(e))

@@ -35,6 +35,8 @@ def getblock(h):
 # Puts a block
 def putblock(b):
     """Puts a block"""
+    # b = xml.client.Binary.decode(b)
+    b = b.data
     hash_value = hashlib.sha256(b).hexdigest()
     hashBlockMap[hash_value] = b
     print("PutBlock()", hash_value)
@@ -65,22 +67,24 @@ def updatefile(filename, version, hashlist):
     print("UpdateFile()")
     # if the file never existed, create it.
     if filename not in fileInfoMap:
+        print(filename)
         fileInfoMap[filename] = [version, hashlist]
-        return
+        print("File uploaded")
+        return filename
     # if the file was previously deleted, update the version number
     # that is one larger than the "tombstone" record.
     if fileInfoMap[filename][1] == '0':
         fileInfoMap[filename][0] += 1
         fileInfoMap[filename][1] = hashlist
-        return
+        return filename
     # if the file is in the file info map, update it.
     currVersion = fileInfoMap[filename][0]
     if version != currVersion + 1:
         print("Version not right!")
-        return
+        return filename
     fileInfoMap[filename][1] = hashlist
     print("File updated.")
-    return
+    return filename
 
 
 # PROJECT 3 APIs below
