@@ -12,8 +12,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # if index.txt does not exist, create
-    if not os.path.exists(args.basedir + "index.txt"):
-        with open(args.basedir + "index.txt", 'w'):
+    indexpath = os.path.join(args.basedir, "index.txt")
+    if not os.path.exists(indexpath):
+        with open(indexpath, 'w'):
             pass
     try:
         client = xmlrpc.client.ServerProxy('http://' + args.hostport)
@@ -29,7 +30,7 @@ if __name__ == "__main__":
         # open local index file
         # key : value = 'xxx.jpg' : [version 'e52a', '928f', '11c3']
         localFileInfo = {}
-        with open(args.basedir + "index.txt") as f:
+        with open(indexpath) as f:
             for line in f:
                 line = line.split('\n')[0]
                 linelist = line.split(" ")
@@ -40,7 +41,7 @@ if __name__ == "__main__":
             if filename == "index.txt" or filename == ".DS_Store":
                 continue
             hashlist = []
-            with open(args.basedir + filename, "rb") as bytefile:
+            with open(os.path.join(args.basedir, filename), "rb") as bytefile:
                 while True:
                     piece = bytefile.read(args.blocksize)
                     if piece == b'':
@@ -62,7 +63,7 @@ if __name__ == "__main__":
                 # remote file not in local or remote version larger than local,
                 # download and update local index
                 print("Download {} from the server.".format(filename))
-                with open(args.basedir + filename, 'wb') as f:
+                with open(os.path.join(args.basedir, filename), 'wb') as f:
                     for h in remoteFileInfo[filename][1]:
                         block = client.surfstore.getblock(h)
                         f.write(block.data)
@@ -75,7 +76,7 @@ if __name__ == "__main__":
                 continue
             # if update is successful, update local index.
             print("Upload {} to the server.".format(filename))
-            with open(args.basedir + filename, "rb") as bytefile:
+            with open(os.path.join(args.basedir, filename), "rb") as bytefile:
                 while True:
                     piece = bytefile.read(args.blocksize)
                     if piece == b'':
@@ -93,7 +94,7 @@ if __name__ == "__main__":
                 continue
             version += 1
             print("Update {} on the server.".format(filename))
-            with open(args.basedir + filename, "rb") as bytefile:
+            with open(os.path.join(args.basedir, filename), "rb") as bytefile:
                 while True:
                     piece = bytefile.read(args.blocksize)
                     if piece == b'':
@@ -106,7 +107,7 @@ if __name__ == "__main__":
 
         # update local index.txt
         print("Update local index.txt:")
-        with open(args.basedir + "index.txt", 'w') as f:
+        with open(indexpath, 'w') as f:
             for filename in localFileInfo:
                 version = localFileInfo[filename][0]
                 hashlist = localFileInfo[filename][1:]
