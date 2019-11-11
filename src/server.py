@@ -82,7 +82,7 @@ def updatefile(filename, version, hashlist):
     if version != currVersion + 1:
         print("Version not right!")
         return False
-    fileInfoMap[filename][1] = hashlist
+    fileInfoMap[filename] = [version] + [hashlist]
     print("File updated.")
     return True
 

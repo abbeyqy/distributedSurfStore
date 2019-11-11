@@ -18,12 +18,12 @@ if __name__ == "__main__":
         print("Ping() successful")
 
         ##### sync file #####
-        # { filename : [version number, h1, h2, h3...]}
+        # { filename : [h1, h2, h3...]}
         localNewFile = {}
         localUpdatedFile = {}
 
         # open local index file
-        # key : value = 'xxx.jpg' : [2 'e52a', '928f', '11c3']
+        # key : value = 'xxx.jpg' : [version 'e52a', '928f', '11c3']
         localFileInfo = {}
 
         # if index.txt does not exist, create
@@ -33,12 +33,13 @@ if __name__ == "__main__":
 
         with open(args.basedir + "index.txt") as f:
             for line in f:
+                line = line.split('\n')[0]
                 linelist = line.split(" ")
                 localFileInfo[linelist[0]] = [int(linelist[1])] + linelist[2:]
 
         # client scan base directory
         for filename in os.listdir(args.basedir):
-            if filename == "index.txt":
+            if filename == "index.txt" or filename == ".DS_Store":
                 continue
             hashlist = []
             with open(args.basedir + filename, "rb") as bytefile:
@@ -51,17 +52,18 @@ if __name__ == "__main__":
             if filename not in localFileInfo:
                 localNewFile[filename] = hashlist
             elif localFileInfo[filename][1:] != hashlist:
+                print(localFileInfo[filename][1:], hashlist)
                 localUpdatedFile[filename] = hashlist
 
         # download remote index file
         remoteFileInfo = client.surfstore.getfileinfomap()
 
         for filename in remoteFileInfo:
-            if (filename not in localFileInfo and filename not in localNewFile
-                ) or (filename in localFileInfo and remoteFileInfo[filename][0]
-                      > localFileInfo[filename][0]):
+            if (filename not in localFileInfo) or (
+                    remoteFileInfo[filename][0] > localFileInfo[filename][0]):
                 # remote file not in local or remote version larger than local,
                 # download and update local index
+                print("Download {} from the server.".format(filename))
                 with open(args.basedir + filename, 'wb') as f:
                     for h in remoteFileInfo[filename][1]:
                         block = client.surfstore.getblock(h)
@@ -71,7 +73,10 @@ if __name__ == "__main__":
 
         # upload local new file to the server
         for filename in localNewFile:
+            if filename in remoteFileInfo:
+                continue
             # if update is successful, update local index.
+            print("Upload {} to the server.".format(filename))
             if client.surfstore.updatefile(filename, 1,
                                            localNewFile[filename]):
                 with open(args.basedir + filename, "rb") as bytefile:
@@ -88,7 +93,8 @@ if __name__ == "__main__":
             version = localFileInfo[filename][0]
             if version != remoteFileInfo[filename][0]:
                 continue
-            verison += 1
+            version += 1
+            print("Update {} on the server.".format(filename))
             if client.surfstore.updatefile(filename, version,
                                            localUpdatedFile[filename]):
                 with open(args.basedir + filename, "rb") as bytefile:
@@ -97,23 +103,19 @@ if __name__ == "__main__":
                         if piece == b'':
                             break
                         client.surfstore.putblock(piece)
-                localFileInfo[filename] = [version] + localNewFile[filename]
+                localFileInfo[filename] = [version
+                                           ] + localUpdatedFile[filename]
 
         # update local index.txt
+        print("Update local index.txt:")
         with open(args.basedir + "index.txt", 'w') as f:
             for filename in localFileInfo:
-                print(filename)
                 version = localFileInfo[filename][0]
-                print(version)
                 hashlist = localFileInfo[filename][1:]
-                print(hashlist)
                 f.write(
                     str(filename) + " " + str(version) + " " +
-                    ''.join(hashlist) + '\n')
-
-# handle conflicts
-
-# update existed file
+                    ' '.join(hashlist) + '\n')
+                print(filename + ' ' + str(version) + ' ' + ' '.join(hashlist))
 
     except Exception as e:
         print("Client: " + str(e))
