@@ -18,7 +18,7 @@ if __name__ == "__main__":
         print("Ping() successful")
 
         ##### sync file #####
-        # { filenam : [h1, h2, h3...]}
+        # { filename : [version number, h1, h2, h3...]}
         localNewFile = {}
         localUpdatedFile = {}
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         # key : value = 'xxx.jpg' : [2 'e52a', '928f', '11c3']
         with open(args.basedir + "index.txt") as f:
             for line in f:
-                linelist = line.split()
+                linelist = line.split(" ")
                 localFileInfo[linelist[0]] = [int(linelist[1])] + linelist[2:]
 
         # client scan base directory
@@ -62,7 +62,8 @@ if __name__ == "__main__":
                 # remote file not in local, download and update local index
                 with open(args.basedir + filename, 'wb') as f:
                     for h in remoteFileInfo[filename][1]:
-                        f.write(client.surfstore.getblock(h))
+                        block = client.surfstore.getblock(h)
+                        f.write(block.data)
                 content = remoteFileInfo[filename]
                 localFileInfo[filename] = [content[0]] + content[1]
 
@@ -78,6 +79,31 @@ if __name__ == "__main__":
                             break
                         client.surfstore.putblock(piece)
                 localFileInfo[filename] = [1] + localNewFile[filename]
+
+        # # upload local modified file to the server
+        # for filename in localUpdatedFile:
+        #     # if update is successful, update local index.
+        #     version = localFileInfo[filename][0]
+        #     if client.surfstore.updatefile(filename, version,
+        #                                    localNewFile[filename]):
+        #         with open(args.basedir + filename, "rb") as bytefile:
+        #             while True:
+        #                 piece = bytefile.read(args.blocksize)
+        #                 if piece == b'':
+        #                     break
+        #                 client.surfstore.putblock(piece)
+        #         localFileInfo[filename] = [1] + localNewFile[filename]
+
+        # update local index.txt
+        with open(args.basedir + "index.txt", 'w') as f:
+            for filename in localFileInfo:
+                print(filename)
+                version = localFileInfo[filename][0]
+                print(version)
+                hashlist = localFileInfo[filename][1:]
+                print(hashlist)
+                f.write(str(filename) + " " + str(version) + " " + ''.join(hashlist) + '\n')
+
 # handle conflicts
 
 # update existed file
