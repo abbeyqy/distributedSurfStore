@@ -11,6 +11,10 @@ if __name__ == "__main__":
     parser.add_argument('blocksize', type=int, help='Block size')
     args = parser.parse_args()
 
+    # if index.txt does not exist, create
+    if not os.path.exists(args.basedir + "index.txt"):
+        with open(args.basedir + "index.txt", 'w'):
+            pass
     try:
         client = xmlrpc.client.ServerProxy('http://localhost:8080')
         # Test ping
@@ -25,12 +29,6 @@ if __name__ == "__main__":
         # open local index file
         # key : value = 'xxx.jpg' : [version 'e52a', '928f', '11c3']
         localFileInfo = {}
-
-        # if index.txt does not exist, create
-        if not os.path.exists(args.basedir + "index.txt"):
-            with open(args.basedir + "index.txt", 'w'):
-                pass
-
         with open(args.basedir + "index.txt") as f:
             for line in f:
                 line = line.split('\n')[0]
