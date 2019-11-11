@@ -16,7 +16,7 @@ if __name__ == "__main__":
         with open(args.basedir + "index.txt", 'w'):
             pass
     try:
-        client = xmlrpc.client.ServerProxy('http://localhost:8080')
+        client = xmlrpc.client.ServerProxy('http://' + args.hostport)
         # Test ping
         client.surfstore.ping()
         print("Ping() successful")
