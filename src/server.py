@@ -58,6 +58,7 @@ def getfileinfomap():
     key : value = 'xxx.jpg' : [2 ['e52a', '928f', '11c3']]
     """
     print("GetFileInfoMap()")
+    print(fileInfoMap)
     return fileInfoMap
 
 
@@ -82,6 +83,7 @@ def updatefile(filename, version, hashlist):
     if version != currVersion + 1:
         print("Version not right!")
         return False
+    print(hashlist)
     fileInfoMap[filename] = [version] + [hashlist]
     print("File updated.")
     return True
