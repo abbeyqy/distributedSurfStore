@@ -70,21 +70,21 @@ def updatefile(filename, version, hashlist):
         print(filename)
         fileInfoMap[filename] = [version, hashlist]
         print("File uploaded")
-        return filename
+        return True
     # if the file was previously deleted, update the version number
     # that is one larger than the "tombstone" record.
     if fileInfoMap[filename][1] == '0':
         fileInfoMap[filename][0] += 1
         fileInfoMap[filename][1] = hashlist
-        return filename
+        return True
     # if the file is in the file info map, update it.
     currVersion = fileInfoMap[filename][0]
     if version != currVersion + 1:
         print("Version not right!")
-        return filename
+        return False
     fileInfoMap[filename][1] = hashlist
     print("File updated.")
-    return filename
+    return True
 
 
 # PROJECT 3 APIs below

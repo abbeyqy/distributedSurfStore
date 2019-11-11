@@ -27,13 +27,14 @@ if __name__ == "__main__":
 
         # if index.txt does not exist, create
         if not os.path.exists(args.basedir + "index.txt"):
-            with open(args.basedir + "index.txt", 'w'): pass
+            with open(args.basedir + "index.txt", 'w'):
+                pass
 
-        # key : value = 'xxx.jpg' : [2 ['e52a', '928f', '11c3']]
+        # key : value = 'xxx.jpg' : [2 'e52a', '928f', '11c3']
         with open(args.basedir + "index.txt") as f:
             for line in f:
                 linelist = line.split()
-                localFileInfo[linelist[0]] = [linelist[1]].append(linelist[2:])
+                localFileInfo[linelist[0]] = [int(linelist[1])] + linelist[2:]
 
         # client scan base directory
         for filename in os.listdir(args.basedir):
@@ -49,26 +50,37 @@ if __name__ == "__main__":
                     hashlist.append(h)
             if filename not in localFileInfo:
                 localNewFile[filename] = hashlist
-            elif localFileInfo[filename][1] != hashlist:
+            elif localFileInfo[filename][1:] != hashlist:
                 localUpdatedFile[filename] = hashlist
 
         # download remote index file
         remoteFileInfo = client.surfstore.getfileinfomap()
 
-        # update new file
+        for filename in remoteFileInfo:
+            if (filename not in localFileInfo) and (
+                    filename not in localNewFile):
+                # remote file not in local, download and update local index
+                with open(args.basedir + filename, 'wb') as f:
+                    for h in remoteFileInfo[filename][1]:
+                        f.write(client.surfstore.getblock(h))
+                content = remoteFileInfo[filename]
+                localFileInfo[filename] = [content[0]] + content[1]
+
+        # upload local new file to the server
         for filename in localNewFile:
-            with open(args.basedir + filename, "rb") as bytefile:
-                while True:
-                    piece = bytefile.read(args.blocksize)
-                    if piece == b'':
-                        break
-                    client.surfstore.putblock(piece)
-            client.surfstore.updatefile(filename, 1, localNewFile[filename])
+            # if update is successful, update local index.
+            if client.surfstore.updatefile(filename, 1,
+                                           localNewFile[filename]):
+                with open(args.basedir + filename, "rb") as bytefile:
+                    while True:
+                        piece = bytefile.read(args.blocksize)
+                        if piece == b'':
+                            break
+                        client.surfstore.putblock(piece)
+                localFileInfo[filename] = [1] + localNewFile[filename]
+# handle conflicts
 
-        # # download remote index file
-        # remoteFileInfo = client.surfstore.getfileinfomap()
-        # print(remoteFileInfo)
-
+# update existed file
 
     except Exception as e:
         print("Client: " + str(e))
