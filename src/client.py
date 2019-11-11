@@ -77,14 +77,14 @@ if __name__ == "__main__":
                 continue
             # if update is successful, update local index.
             print("Upload {} to the server.".format(filename))
+            with open(args.basedir + filename, "rb") as bytefile:
+                while True:
+                    piece = bytefile.read(args.blocksize)
+                    if piece == b'':
+                        break
+                    client.surfstore.putblock(piece)
             if client.surfstore.updatefile(filename, 1,
                                            localNewFile[filename]):
-                with open(args.basedir + filename, "rb") as bytefile:
-                    while True:
-                        piece = bytefile.read(args.blocksize)
-                        if piece == b'':
-                            break
-                        client.surfstore.putblock(piece)
                 localFileInfo[filename] = [1] + localNewFile[filename]
 
         # upload local modified file to the server
@@ -95,14 +95,14 @@ if __name__ == "__main__":
                 continue
             version += 1
             print("Update {} on the server.".format(filename))
+            with open(args.basedir + filename, "rb") as bytefile:
+                while True:
+                    piece = bytefile.read(args.blocksize)
+                    if piece == b'':
+                        break
+                    client.surfstore.putblock(piece)
             if client.surfstore.updatefile(filename, version,
                                            localUpdatedFile[filename]):
-                with open(args.basedir + filename, "rb") as bytefile:
-                    while True:
-                        piece = bytefile.read(args.blocksize)
-                        if piece == b'':
-                            break
-                        client.surfstore.putblock(piece)
                 localFileInfo[filename] = [version
                                            ] + localUpdatedFile[filename]
 
