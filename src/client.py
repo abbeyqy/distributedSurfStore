@@ -90,6 +90,10 @@ if __name__ == "__main__":
                 content = remoteFileInfo[filename]
                 localFileInfo[filename] = [content[0]] + content[1]
 
+                # if updated from remote, then remove it from local updated
+                if filename in localUpdatedFile:
+                    del localUpdatedFile[filename]
+
         print("upload local new file")
         # upload local new file to the server
         for filename in localNewFile:
@@ -108,6 +112,7 @@ if __name__ == "__main__":
                 localFileInfo[filename] = [1] + localNewFile[filename]
 
         print("upload local modified file")
+        print(localFileInfo)
         # upload local modified file to the server
         for filename in localUpdatedFile:
             # if local and remote has same version, sync local changes to server
