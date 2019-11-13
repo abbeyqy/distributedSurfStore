@@ -29,7 +29,7 @@ if __name__ == "__main__":
         localDeletedFile = {}
 
         # currentFile [file1, file2, file3...]
-        currentFile = []
+        currentFile = set()
 
         # open local index file
         # key : value = 'xxx.jpg' : [version 'e52a', '928f', '11c3']
@@ -56,11 +56,12 @@ if __name__ == "__main__":
             # found local new file
             if filename not in localFileInfo:
                 localNewFile[filename] = hashlist
-            elif localFileInfo[filename][1:] != hashlist: # found local updated file
+            elif localFileInfo[filename][
+                    1:] != hashlist:  # found local updated file
                 print(localFileInfo[filename][1:], hashlist)
                 localUpdatedFile[filename] = hashlist
 
-            currentFile.append(filename)
+            currentFile.add(filename)
 
         # scan local deleted file
         print("current local File: ", currentFile)
@@ -78,8 +79,9 @@ if __name__ == "__main__":
         print(remoteFileInfo)
 
         for filename in remoteFileInfo:
-            if (filename not in localFileInfo) or (
-                    remoteFileInfo[filename][0] > localFileInfo[filename][0]) and (remoteFileInfo[filename][1] != "0"):
+            if (filename not in localFileInfo
+                ) or (remoteFileInfo[filename][0] > localFileInfo[filename][0]
+                      ) and (remoteFileInfo[filename][1] != "0"):
                 # remote file not in local or remote version larger than local,
                 # download and update local index
                 print("Download {} from the server.".format(filename))
@@ -129,7 +131,8 @@ if __name__ == "__main__":
                     client.surfstore.putblock(piece)
             if client.surfstore.updatefile(filename, version,
                                            localUpdatedFile[filename]):
-                localFileInfo[filename] = [version] + localUpdatedFile[filename]
+                localFileInfo[filename] = [version
+                                           ] + localUpdatedFile[filename]
 
         print("upload local deleted file")
         # upload local deleted file to the server
@@ -140,8 +143,7 @@ if __name__ == "__main__":
                 continue
             version += 1
             print("Update deleted {} on the server.".format(filename))
-            if client.surfstore.updatefile(filename, version,
-                                           "0"):
+            if client.surfstore.updatefile(filename, version, "0"):
                 localFileInfo[filename] = [version] + ["0"]
 
             print("remote {} deleted".format(filename))
@@ -153,10 +155,10 @@ if __name__ == "__main__":
             if tombstone == ["0"]:
                 localFileInfo[filename][0] = remoteFileInfo[filename][0]
                 localFileInfo[filename][1:] = remoteFileInfo[filename][1:]
-                try: 
-                    os.remove(args.basedir + filename)  
+                try:
+                    os.remove(os.path.join(args.basedir, filename))
                 except Exception as e:
-                    print("No such file")      
+                    print("No such file")
 
         # update local index.txt
         print("Update local index.txt:")
@@ -164,7 +166,9 @@ if __name__ == "__main__":
             for filename in localFileInfo:
                 version = localFileInfo[filename][0]
                 hashlist = localFileInfo[filename][1:]
-                f.write(str(filename) + " " + str(version) + " " + ' '.join(hashlist) + '\n')
+                f.write(
+                    str(filename) + " " + str(version) + " " +
+                    ' '.join(hashlist) + '\n')
                 print(filename + ' ' + str(version) + ' ' + ' '.join(hashlist))
 
     except Exception as e:
